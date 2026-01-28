@@ -59,7 +59,7 @@ const ChatModule = ({
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleSend}
-                    placeholder="INITIALIZE COMMAND..."
+                    placeholder="Digite um comando ou fale com a Ada..."
                     className="flex-1 bg-black/40 border border-cyan-700/30 rounded-lg p-3 text-cyan-50 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 transition-all placeholder-cyan-800/50 backdrop-blur-sm"
                 />
             </div>

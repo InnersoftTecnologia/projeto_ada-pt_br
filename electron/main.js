@@ -64,12 +64,14 @@ function createWindow() {
 }
 
 function startPythonBackend() {
-    const scriptPath = path.join(__dirname, '../backend/server.py');
-    console.log(`Starting Python backend: ${scriptPath}`);
+    const projectRoot = path.join(__dirname, '..');
+    const scriptPath = path.join(projectRoot, 'backend/server.py');
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    console.log(`Starting Python backend: ${scriptPath} (${pythonCmd})`);
 
-    // Assuming 'python' is in PATH. In prod, this would be the executable.
-    pythonProcess = spawn('python', [scriptPath], {
-        cwd: path.join(__dirname, '../backend'),
+    pythonProcess = spawn(pythonCmd, [scriptPath], {
+        cwd: path.join(projectRoot, 'backend'),
+        env: { ...process.env, PYTHONPATH: path.join(projectRoot, 'backend') },
     });
 
     pythonProcess.stdout.on('data', (data) => {

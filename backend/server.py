@@ -69,6 +69,8 @@ DEFAULT_SETTINGS = {
         "switch_project": True,
         "list_projects": True
     },
+    "cad_enabled": False,       # CAD paramétrico 3D (build123d) — desativado se não tiver o software
+    "printer_enabled": False,   # Impressão 3D — desativado se não tiver impressora
     "printers": [], # List of {host, port, name, type}
     "kasa_devices": [], # List of {ip, alias, model}
     "camera_flipped": False # Invert cursor horizontal direction
@@ -270,7 +272,9 @@ async def start_audio(sid, data=None):
 
     # Initialize ADA
     try:
-        print(f"Initializing AudioLoop with device_index={device_index}")
+        cad_ok = SETTINGS.get("cad_enabled", False)
+        printer_ok = SETTINGS.get("printer_enabled", False)
+        print(f"Initializing AudioLoop with device_index={device_index}, cad_enabled={cad_ok}, printer_enabled={printer_ok}")
         audio_loop = ada.AudioLoop(
             video_mode="none", 
             on_audio_data=on_audio_data,
@@ -286,7 +290,9 @@ async def start_audio(sid, data=None):
 
             input_device_index=device_index,
             input_device_name=device_name,
-            kasa_agent=kasa_agent
+            kasa_agent=kasa_agent,
+            cad_enabled=cad_ok,
+            printer_enabled=printer_ok
         )
         print("AudioLoop initialized successfully.")
 
@@ -316,9 +322,9 @@ async def start_audio(sid, data=None):
         print("Emitting 'A.D.A Started'")
         await sio.emit('status', {'msg': 'A.D.A Started'})
 
-        # Load saved printers
+        # Load saved printers (only if printer capability is enabled)
         saved_printers = SETTINGS.get("printers", [])
-        if saved_printers and audio_loop.printer_agent:
+        if saved_printers and getattr(audio_loop, "printer_agent", None):
             print(f"[SERVER] Loading {len(saved_printers)} saved printers...")
             for p in saved_printers:
                 audio_loop.printer_agent.add_printer_manually(
@@ -329,8 +335,9 @@ async def start_audio(sid, data=None):
                     camera_url=p.get("camera_url")
                 )
         
-        # Start Printer Monitor
-        asyncio.create_task(monitor_printers_loop())
+        # Start Printer Monitor only when printer capability is enabled
+        if getattr(audio_loop, "printer_agent", None):
+            asyncio.create_task(monitor_printers_loop())
         
     except Exception as e:
         print(f"CRITICAL ERROR STARTING ADA: {e}")

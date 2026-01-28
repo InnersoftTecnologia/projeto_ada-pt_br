@@ -4,6 +4,7 @@
   "description": "A.D.A V2 - AI Assistant",
   "main": "electron/main.js",
   "scripts": {
+    "predev": "node -e \"const fs=require('fs'); if(!fs.existsSync('.env')){ fs.copyFileSync('.env.example','.env'); console.log('Arquivo .env criado. Coloque sua GEMINI_API_KEY nele.'); }\"",
     "dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && npx electron .\"",
     "build": "vite build",
     "start": "npx electron ."

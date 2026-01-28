@@ -24,7 +24,9 @@ const ToolsModule = ({
     activeDragElement,
 
     position,
-    onMouseDown
+    onMouseDown,
+    cadEnabled = false,
+    printerEnabled = false
 }) => {
     return (
         <div
@@ -109,7 +111,8 @@ const ToolsModule = ({
                     <Lightbulb size={24} />
                 </button>
 
-                {/* 3D Printer Control */}
+                {/* 3D Printer Control — só mostra se a capacidade estiver ativa */}
+                {printerEnabled && (
                 <button
                     onClick={onTogglePrinter}
                     className={`p-3 rounded-full border-2 transition-all duration-300 ${showPrinterWindow
@@ -119,8 +122,10 @@ const ToolsModule = ({
                 >
                     <Printer size={24} />
                 </button>
+                )}
 
-                {/* CAD Agent Toggle */}
+                {/* CAD paramétrico — só mostra se a capacidade estiver ativa */}
+                {cadEnabled && (
                 <button
                     onClick={onToggleCad}
                     className={`p-3 rounded-full border-2 transition-all duration-300 ${showCadWindow
@@ -130,6 +135,7 @@ const ToolsModule = ({
                 >
                     <Box size={24} />
                 </button>
+                )}
 
                 {/* Web Agent Toggle */}
                 <button

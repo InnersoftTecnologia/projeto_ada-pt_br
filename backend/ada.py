@@ -33,7 +33,9 @@ CHUNK_SIZE = 1024
 MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025"
 DEFAULT_MODE = "camera"
 
-load_dotenv()
+# Carrega .env da raiz do projeto (ada_v2/.env)
+_load_env = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+load_dotenv(_load_env)
 client = genai.Client(http_options={"api_version": "v1beta"}, api_key=os.getenv("GEMINI_API_KEY"))
 
 # Function definitions
@@ -180,38 +182,44 @@ iterate_cad_tool = {
     "behavior": "NON_BLOCKING"
 }
 
-tools = [{'google_search': {}}, {"function_declarations": [generate_cad, run_web_agent, create_project_tool, switch_project_tool, list_projects_tool, list_smart_devices_tool, control_light_tool, discover_printers_tool, print_stl_tool, get_print_status_tool, iterate_cad_tool] + tools_list[0]['function_declarations'][1:]}]
+def _build_tools(cad_enabled, printer_enabled):
+    """Monta a lista de ferramentas conforme capacidades ativas (CAD e impressão 3D opcionais)."""
+    decl = [run_web_agent, create_project_tool, switch_project_tool, list_projects_tool, list_smart_devices_tool, control_light_tool] + tools_list[0]['function_declarations'][1:]
+    if cad_enabled:
+        decl = [generate_cad, iterate_cad_tool] + decl
+    if printer_enabled:
+        decl = [discover_printers_tool, print_stl_tool, get_print_status_tool] + decl
+    return [{'google_search': {}}, {"function_declarations": decl}]
 
-# --- CONFIG UPDATE: Enabled Transcription ---
-config = types.LiveConnectConfig(
-    response_modalities=["AUDIO"],
-    # We switch these from [] to {} to enable them with default settings
-    output_audio_transcription={}, 
-    input_audio_transcription={},
-    system_instruction="Your name is Ada, which stands for Advanced Design Assistant. "
-        "You have a witty and charming personality. "
-        "Your creator is Naz, and you address him as 'Sir'. "
-        "When answering, respond using complete and concise sentences to keep a quick pacing and keep the conversation flowing. "
-        "You have a fun personality.",
-    tools=tools,
-    speech_config=types.SpeechConfig(
-        voice_config=types.VoiceConfig(
-            prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                voice_name="Kore"
+
+def _get_config(cad_enabled, printer_enabled):
+    """Retorna LiveConnectConfig com ferramentas e instrução em português."""
+    return types.LiveConnectConfig(
+        response_modalities=["AUDIO"],
+        output_audio_transcription={},
+        input_audio_transcription={},
+        system_instruction="Você se chama Ada, Assistente Avançada de Design. "
+            "Responda sempre em português do Brasil. "
+            "Seja objetiva e clara, em frases completas e curtas. "
+            "Personalidade amigável e prestativa.",
+        tools=_build_tools(cad_enabled, printer_enabled),
+        speech_config=types.SpeechConfig(
+            voice_config=types.VoiceConfig(
+                prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                    voice_name="Kore"
+                )
             )
         )
     )
-)
+
 
 pya = pyaudio.PyAudio()
 
-from cad_agent import CadAgent
 from web_agent import WebAgent
 from kasa_agent import KasaAgent
-from printer_agent import PrinterAgent
 
 class AudioLoop:
-    def __init__(self, video_mode=DEFAULT_MODE, on_audio_data=None, on_video_frame=None, on_cad_data=None, on_web_data=None, on_transcription=None, on_tool_confirmation=None, on_cad_status=None, on_cad_thought=None, on_project_update=None, on_device_update=None, on_error=None, input_device_index=None, input_device_name=None, output_device_index=None, kasa_agent=None):
+    def __init__(self, video_mode=DEFAULT_MODE, on_audio_data=None, on_video_frame=None, on_cad_data=None, on_web_data=None, on_transcription=None, on_tool_confirmation=None, on_cad_status=None, on_cad_thought=None, on_project_update=None, on_device_update=None, on_error=None, input_device_index=None, input_device_name=None, output_device_index=None, kasa_agent=None, cad_enabled=False, printer_enabled=False):
         self.video_mode = video_mode
         self.on_audio_data = on_audio_data
         self.on_video_frame = on_video_frame
@@ -227,6 +235,8 @@ class AudioLoop:
         self.input_device_index = input_device_index
         self.input_device_name = input_device_name
         self.output_device_index = output_device_index
+        self.cad_enabled = cad_enabled
+        self.printer_enabled = printer_enabled
 
         self.audio_in_queue = None
         self.out_queue = None
@@ -244,7 +254,6 @@ class AudioLoop:
 
         self.session = None
         
-        # Create CadAgent with thought callback
         def handle_cad_thought(thought_text):
             if self.on_cad_thought:
                 self.on_cad_thought(thought_text)
@@ -253,10 +262,18 @@ class AudioLoop:
             if self.on_cad_status:
                 self.on_cad_status(status_info)
         
-        self.cad_agent = CadAgent(on_thought=handle_cad_thought, on_status=handle_cad_status)
+        if cad_enabled:
+            from cad_agent import CadAgent
+            self.cad_agent = CadAgent(on_thought=handle_cad_thought, on_status=handle_cad_status)
+        else:
+            self.cad_agent = None
         self.web_agent = WebAgent()
         self.kasa_agent = kasa_agent if kasa_agent else KasaAgent()
-        self.printer_agent = PrinterAgent()
+        if printer_enabled:
+            from printer_agent import PrinterAgent
+            self.printer_agent = PrinterAgent()
+        else:
+            self.printer_agent = None
 
         self.send_text_task = None
         self.stop_event = asyncio.Event()
@@ -1176,9 +1193,10 @@ class AudioLoop:
         
         while not self.stop_event.is_set():
             try:
-                print(f"[ADA DEBUG] [CONNECT] Connecting to Gemini Live API...")
+                _config = _get_config(self.cad_enabled, self.printer_enabled)
+                print(f"[ADA DEBUG] [CONNECT] Connecting to Gemini Live API... (cad={self.cad_enabled}, printer={self.printer_enabled})")
                 async with (
-                    client.aio.live.connect(model=MODEL, config=config) as session,
+                    client.aio.live.connect(model=MODEL, config=_config) as session,
                     asyncio.TaskGroup() as tg,
                 ):
                     self.session = session

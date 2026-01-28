@@ -3,7 +3,7 @@ import { Lock, Unlock, User } from 'lucide-react';
 
 const AuthLock = ({ socket, onAuthenticated, onAnimationComplete }) => {
     const [frameSrc, setFrameSrc] = useState(null);
-    const [message, setMessage] = useState("Initializing Security...");
+    const [message, setMessage] = useState("Iniciando verificação...");
     const [isUnlocking, setIsUnlocking] = useState(false);
 
     useEffect(() => {
@@ -14,14 +14,14 @@ const AuthLock = ({ socket, onAuthenticated, onAnimationComplete }) => {
             if (data.authenticated && !isUnlocking) {
                 // Start Unlock Sequence
                 setIsUnlocking(true);
-                setMessage("Identity Verified. Access Granted.");
+                setMessage("Identidade verificada. Acesso liberado.");
 
                 // Wait for animation then notify parent
                 setTimeout(() => {
                     onAuthenticated(true);
                 }, 2000); // 2 seconds animation
             } else if (!data.authenticated && !isUnlocking) {
-                setMessage("Look at the camera to unlock.");
+                setMessage("Olhe para a câmera para desbloquear.");
             }
         };
 
@@ -56,7 +56,7 @@ const AuthLock = ({ socket, onAuthenticated, onAnimationComplete }) => {
             <div className={`relative flex flex-col items-center gap-6 p-10 border ${borderColor}/30 rounded-lg bg-black/80 backdrop-blur-xl ${shadowColor} transition-all duration-[1500ms]`}>
                 <div className={`text-3xl font-bold tracking-[0.3em] uppercase drop-shadow-[0_0_10px_currentColor] flex items-center gap-4 ${themeColor} transition-colors duration-1000`}>
                     {isUnlocking ? <Unlock size={32} /> : <Lock size={32} />}
-                    {isUnlocking ? "SYSTEM UNLOCKED" : "SYSTEM LOCKED"}
+                    {isUnlocking ? "SISTEMA DESBLOQUEADO" : "SISTEMA BLOQUEADO"}
                 </div>
 
                 {/* Camera Feed Frame */}

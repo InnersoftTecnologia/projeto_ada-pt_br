@@ -22,7 +22,7 @@ const socket = io('http://localhost:8000');
 const { ipcRenderer } = window.require('electron');
 
 function App() {
-    const [status, setStatus] = useState('Disconnected');
+    const [status, setStatus] = useState('Desconectado');
     const [socketConnected, setSocketConnected] = useState(socket.connected); // Track socket connection reactively
     // Auth State
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -84,6 +84,8 @@ function App() {
     const [selectedWebcamId, setSelectedWebcamId] = useState(() => localStorage.getItem('selectedWebcamId') || '');
     const [showSettings, setShowSettings] = useState(false);
     const [currentProject, setCurrentProject] = useState('default');
+    const [cadEnabled, setCadEnabled] = useState(false);
+    const [printerEnabled, setPrinterEnabled] = useState(false);
 
     // Modular Mode State
     const [isModularMode, setIsModularMode] = useState(false);
@@ -305,7 +307,7 @@ function App() {
                 const deviceName = queryDevice ? queryDevice.label : null;
                 console.log("Auto-connecting to model with device:", deviceName, "Index:", index);
 
-                setStatus('Connecting...');
+                setStatus('Conectando...');
                 socket.emit('start_audio', {
                     device_index: index >= 0 ? index : null,
                     device_name: deviceName,
@@ -318,22 +320,18 @@ function App() {
     useEffect(() => {
         // Socket IO Setup
         socket.on('connect', () => {
-            setStatus('Connected');
+            setStatus('Conectado');
             setSocketConnected(true);
             socket.emit('get_settings');
         });
         socket.on('disconnect', () => {
-            setStatus('Disconnected');
+            setStatus('Desconectado');
             setSocketConnected(false);
         });
         socket.on('status', (data) => {
-            addMessage('System', data.msg);
-            // Update status bar based on backend messages
-            if (data.msg === 'A.D.A Started') {
-                setStatus('Model Connected');
-            } else if (data.msg === 'A.D.A Stopped') {
-                setStatus('Connected');
-            }
+            addMessage('Sistema', data.msg);
+            if (data.msg === 'A.D.A Started') setStatus('Modelo conectado');
+            else if (data.msg === 'A.D.A Stopped') setStatus('Conectado');
         });
         socket.on('audio_data', (data) => {
             setAiAudioData(data.data);
@@ -367,10 +365,12 @@ function App() {
                 console.log("[Settings] Camera flip set to:", settings.camera_flipped);
                 setIsCameraFlipped(settings.camera_flipped);
             }
+            if (typeof settings.cad_enabled !== 'undefined') setCadEnabled(settings.cad_enabled);
+            if (typeof settings.printer_enabled !== 'undefined') setPrinterEnabled(settings.printer_enabled);
         });
         socket.on('error', (data) => {
             console.error("Socket Error:", data);
-            addMessage('System', `Error: ${data.msg}`);
+            addMessage('Sistema', `Erro: ${data.msg}`);
         });
         socket.on('cad_data', (data) => {
             console.log("Received CAD Data:", data);
@@ -504,7 +504,7 @@ function App() {
         socket.on('project_update', (data) => {
             console.log("Project Update:", data.project);
             setCurrentProject(data.project);
-            addMessage('System', `Switched to project: ${data.project}`);
+            addMessage('Sistema', `Projeto alterado: ${data.project}`);
         });
 
         // Track printer count for toolbar display
@@ -608,11 +608,11 @@ function App() {
                     numHands: 1
                 });
                 console.log("HandLandmarker initialized successfully!");
-                addMessage('System', 'Hand Tracking Ready');
+                addMessage('Sistema', 'Controle por gestos pronto');
 
             } catch (error) {
                 console.error("Failed to initialize HandLandmarker:", error);
-                addMessage('System', `Hand Tracking Error: ${error.message}`);
+                addMessage('Sistema', `Erro no controle por gestos: ${error.message}`);
             }
         };
         initHandLandmarker();
@@ -748,7 +748,7 @@ function App() {
 
         } catch (err) {
             console.error("Error accessing camera:", err);
-            addMessage('System', 'Error accessing camera');
+            addMessage('Sistema', 'Erro ao acessar a câmera');
         }
     };
 
@@ -1099,7 +1099,7 @@ function App() {
     const handleSend = (e) => {
         if (e.key === 'Enter' && inputValue.trim()) {
             socket.emit('user_input', { text: inputValue });
-            addMessage('You', inputValue);
+            addMessage('Você', inputValue);
             setInputValue('');
         }
     };
@@ -1139,13 +1139,13 @@ function App() {
                 // Just send the text content directly
                 if (typeof textContent === 'string' && textContent.length > 0) {
                     socket.emit('upload_memory', { memory: textContent });
-                    addMessage('System', 'Uploading memory...');
+                    addMessage('Sistema', 'Enviando memória...');
                 } else {
-                    addMessage('System', 'Empty or invalid memory file');
+                    addMessage('Sistema', 'Arquivo de memória vazio ou inválido');
                 }
             } catch (err) {
                 console.error("Error reading file:", err);
-                addMessage('System', 'Error reading memory file');
+                addMessage('Sistema', 'Erro ao ler arquivo de memória');
             }
         };
         reader.readAsText(file);
@@ -1412,14 +1412,14 @@ function App() {
                     {printerCount > 0 && (
                         <div className="flex items-center gap-1.5 text-[10px] text-green-400 border border-green-500/30 bg-green-500/10 px-2 py-0.5 rounded ml-2">
                             <Printer size={10} className="text-green-400" />
-                            <span>{printerCount} Printer{printerCount !== 1 ? 's' : ''}</span>
+                            <span>{printerCount} Impressora{printerCount !== 1 ? 's' : ''}</span>
                         </div>
                     )}
                     {/* Connected Smart Devices Count */}
                     {kasaDevices.length > 0 && (
                         <div className="flex items-center gap-1.5 text-[10px] text-yellow-400 border border-yellow-500/30 bg-yellow-500/10 px-2 py-0.5 rounded ml-2">
                             <span>💡</span>
-                            <span>{kasaDevices.length} Device{kasaDevices.length !== 1 ? 's' : ''}</span>
+                            <span>{kasaDevices.length} Dispositivo{kasaDevices.length !== 1 ? 's' : ''}</span>
                         </div>
                     )}
                 </div>
@@ -1481,7 +1481,7 @@ function App() {
                 {/* Video Feed Overlay */}
                 {/* Floating Project Label */}
                 <div className="absolute top-[70px] left-1/2 -translate-x-1/2 text-cyan-500 text-xs font-mono tracking-widest pointer-events-none z-50 bg-black/50 px-2 py-1 rounded backdrop-blur-sm border border-cyan-500/20">
-                    PROJECT: {currentProject?.toUpperCase()}
+                    PROJETO: {currentProject?.toUpperCase()}
                 </div>
 
                 <div
@@ -1555,7 +1555,7 @@ function App() {
                             data-drag-handle
                             className="h-8 bg-gray-900/80 border-b border-cyan-500/20 flex items-center justify-between px-3 cursor-grab active:cursor-grabbing shrink-0"
                         >
-                            <span className="text-xs font-bold tracking-widest text-cyan-500/70">CAD PROTOTYPE</span>
+                            <span className="text-xs font-bold tracking-widest text-cyan-500/70">CAD PROTÓTIPO</span>
                             <button
                                 onClick={() => setShowCadWindow(false)}
                                 className="text-gray-400 hover:text-red-400 hover:bg-red-500/20 p-1 rounded transition-colors"
@@ -1647,6 +1647,8 @@ function App() {
                         activeDragElement={activeDragElement}
                         position={elementPositions.tools}
                         onMouseDown={(e) => handleMouseDown(e, 'tools')}
+                        cadEnabled={cadEnabled}
+                        printerEnabled={printerEnabled}
                     />
                 </div>
 

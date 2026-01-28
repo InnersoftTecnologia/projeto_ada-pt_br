@@ -91,7 +91,7 @@ const SettingsWindow = ({
     return (
         <div className="absolute top-20 right-10 bg-black/90 border border-cyan-500/50 p-4 rounded-lg z-50 w-80 backdrop-blur-xl shadow-[0_0_30px_rgba(6,182,212,0.2)]">
             <div className="flex justify-between items-center mb-4 border-b border-cyan-900/50 pb-2">
-                <h2 className="text-cyan-400 font-bold text-sm uppercase tracking-wider">Settings</h2>
+                <h2 className="text-cyan-400 font-bold text-sm uppercase tracking-wider">Configurações</h2>
                 <button onClick={onClose} className="text-cyan-600 hover:text-cyan-400">
                     <X size={16} />
                 </button>
@@ -99,9 +99,9 @@ const SettingsWindow = ({
 
             {/* Authentication Section */}
             <div className="mb-6">
-                <h3 className="text-cyan-400 font-bold mb-3 text-xs uppercase tracking-wider opacity-80">Security</h3>
+                <h3 className="text-cyan-400 font-bold mb-3 text-xs uppercase tracking-wider opacity-80">Segurança</h3>
                 <div className="flex items-center justify-between text-xs bg-gray-900/50 p-2 rounded border border-cyan-900/30">
-                    <span className="text-cyan-100/80">Face Authentication</span>
+                    <span className="text-cyan-100/80">Autenticação facial</span>
                     <button
                         onClick={toggleFaceAuth}
                         className={`relative w-8 h-4 rounded-full transition-colors duration-200 ${faceAuthEnabled ? 'bg-cyan-500/80' : 'bg-gray-700'}`}
@@ -115,7 +115,7 @@ const SettingsWindow = ({
 
             {/* Microphone Section */}
             <div className="mb-4">
-                <h3 className="text-cyan-400 font-bold mb-2 text-xs uppercase tracking-wider opacity-80">Microphone</h3>
+                <h3 className="text-cyan-400 font-bold mb-2 text-xs uppercase tracking-wider opacity-80">Microfone</h3>
                 <select
                     value={selectedMicId}
                     onChange={(e) => setSelectedMicId(e.target.value)}
