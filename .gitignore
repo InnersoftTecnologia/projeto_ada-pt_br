@@ -15,6 +15,9 @@ long_term_memory/
 projects/
 output.stl
 cad_outputs/
+.ada.pid
+.ada.backend.pid
+.ada.log
 
 # Node.js
 node_modules/

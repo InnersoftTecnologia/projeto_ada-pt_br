@@ -1,6 +1,44 @@
 # Ada V2 — Guia em Português
 
-## Rodar o projeto
+**Projeto original:** [Nazir Louis](https://github.com/nazirlouis) — [ada_v2](https://github.com/nazirlouis/ada_v2). O mérito da criação é todo dele. Este repositório é apenas a tradução e adaptação para português brasileiro.
+
+---
+
+## Scripts de automação
+
+### 1. `./setup_venv.sh` — Criar o ambiente (venv) automaticamente
+
+Cria o ambiente virtual Python (`venv/`), instala dependências (`pip install -r requirements.txt`), instala o Chromium do Playwright, cria `.env` a partir de `.env.example` se não existir e roda `npm install`.
+
+**No Linux**, o PyAudio precisa dos headers do PortAudio. Antes de rodar o script, instale:
+```bash
+# Debian/Ubuntu
+sudo apt install portaudio19-dev
+```
+Depois:
+```bash
+./setup_venv.sh
+```
+
+### 2. `./ada_ctl.sh` — Iniciar, parar, reiniciar e ver status
+
+| Comando | Descrição |
+|--------|------------|
+| `./ada_ctl.sh start`   | Sobe o backend (com venv) e, em seguida, o frontend/Electron (`npm run dev`). |
+| `./ada_ctl.sh stop`    | Encerra backend, Vite e Electron (por porta e por PID). |
+| `./ada_ctl.sh restart` | Para e sobe de novo. |
+| `./ada_ctl.sh status`  | Mostra se backend (porta 8000) e frontend (porta 5173) estão em execução. |
+
+Exemplo:
+```bash
+./ada_ctl.sh start    # inicia o projeto
+./ada_ctl.sh status   # confere se está rodando
+./ada_ctl.sh stop     # encerra tudo
+```
+
+---
+
+## Rodar o projeto (passo a passo manual)
 
 1. **Ambiente Python (3.11)**  
    Crie e ative o ambiente:

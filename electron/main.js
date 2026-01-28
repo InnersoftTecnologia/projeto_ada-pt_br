@@ -64,9 +64,17 @@ function createWindow() {
 }
 
 function startPythonBackend() {
+    const fs = require('fs');
     const projectRoot = path.join(__dirname, '..');
     const scriptPath = path.join(projectRoot, 'backend/server.py');
-    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    let pythonCmd = process.platform === 'win32' ? 'python' : 'python3';
+    const venvPython = process.platform === 'win32'
+        ? path.join(projectRoot, 'venv', 'Scripts', 'python.exe')
+        : path.join(projectRoot, 'venv', 'bin', 'python');
+    if (fs.existsSync(venvPython)) {
+        pythonCmd = venvPython;
+        console.log('Using venv Python:', pythonCmd);
+    }
     console.log(`Starting Python backend: ${scriptPath} (${pythonCmd})`);
 
     pythonProcess = spawn(pythonCmd, [scriptPath], {
